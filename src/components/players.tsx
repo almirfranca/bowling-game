@@ -54,6 +54,13 @@ export const Players = ({ setIsPlaying }: PlayersProps) => {
     setIsFormEnabled(false);
   }
 
+  function handlePlayGame() {
+    if (players.length === 0) {
+      return toast.error("Crie um jogador primeiro.");
+    }
+    setIsPlaying(true);
+  }
+
   return (
     <div className="flex flex-col items-center w-full h-[100vh] p-10">
       <div className="w-64 h-64">
@@ -89,7 +96,7 @@ export const Players = ({ setIsPlaying }: PlayersProps) => {
       <div>
         <button
           type="button"
-          onClick={() => setIsPlaying(true)}
+          onClick={handlePlayGame}
           className="bg-blue-500  hover:bg-blue-400 text-slate-800 text-xl p-3 w-48 mt-6 rounded-md mb-4"
         >
           Play !
