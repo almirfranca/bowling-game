@@ -81,14 +81,15 @@ const initialFrames = [
 let amountThrows = 2;
 let remainingPins = 10;
 let spare = false;
+let strike = false;
 
 export const App = () => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [dropedPins, setDropedPins] = useState(0);
   const [frames, setFrames] = useState(initialFrames);
   const [indexFrame, setIndexFrame] = useState(0);
+  const [dropedPins, setDropedPins] = useState(0);
 
-  function handleThrowBall(event: ChangeEvent<HTMLInputElement>) {
+  function handleThrowValue(event: ChangeEvent<HTMLInputElement>) {
     const valueThrow = Number(event.target.value);
 
     setDropedPins(valueThrow);
@@ -96,7 +97,6 @@ export const App = () => {
 
   function throwBall(event: FormEvent) {
     event.preventDefault();
-    handleThrowBall;
     toast.success(`Você derrubou: ${dropedPins} Pinos`);
     remainingPins -= dropedPins;
 
@@ -108,19 +108,25 @@ export const App = () => {
 
       if (throws === 2) {
         let pointsFirstThrow = updatedFrames[indexFrame].score + dropedPins;
+        let doubleStrike =
+          updatedFrames[indexFrame - 1]?.firstThrow === 10 && dropedPins === 10;
 
-        if (spare) {
-          console.log("entrei aqui");
+        if (doubleStrike) {
           updatedFrames[indexFrame - 1].score += dropedPins;
           updatedFrames[indexFrame] = {
             ...currentFrame,
             firstThrow: dropedPins,
             score: updatedFrames[indexFrame - 1].score + dropedPins,
           };
-          remainingPins = 10 - dropedPins;
+        } else if (spare) {
+          updatedFrames[indexFrame - 1].score += dropedPins;
+          updatedFrames[indexFrame] = {
+            ...currentFrame,
+            firstThrow: dropedPins,
+            score: updatedFrames[indexFrame - 1].score + dropedPins,
+          };
           spare = false;
         } else {
-          console.log("entrei ali");
           updatedFrames[indexFrame] = {
             ...currentFrame,
             firstThrow: dropedPins,
@@ -133,14 +139,30 @@ export const App = () => {
       } else if (throws === 1) {
         let pointsSecondThrow = updatedFrames[indexFrame].score + dropedPins;
 
-        updatedFrames[indexFrame] = {
-          ...currentFrame,
-          secondThrow: dropedPins,
-          score: pointsSecondThrow,
-        };
+        if (strike) {
+          updatedFrames[indexFrame - 1].score +=
+            updatedFrames[indexFrame].firstThrow + dropedPins;
+
+          updatedFrames[indexFrame] = {
+            ...currentFrame,
+            secondThrow: dropedPins,
+            score:
+              updatedFrames[indexFrame - 1].score +
+              updatedFrames[indexFrame].firstThrow +
+              dropedPins,
+          };
+          strike = false;
+        } else {
+          updatedFrames[indexFrame] = {
+            ...currentFrame,
+            secondThrow: dropedPins,
+            score: pointsSecondThrow,
+          };
+        }
         if (remainingPins !== 0) {
           remainingPins = 10;
         } else {
+          remainingPins = 10;
           spare = true;
         }
       }
@@ -151,12 +173,18 @@ export const App = () => {
     amountThrows -= 1;
     setDropedPins(0);
 
+    if (throws === 2 && dropedPins === 10) {
+      strike = true;
+      remainingPins = 10;
+      amountThrows = 0;
+    }
+
     if (amountThrows === 0) {
       setIndexFrame((prevIndex) => prevIndex + 1);
       amountThrows = 2;
     }
 
-    console.log(remainingPins, spare);
+    console.log(remainingPins, spare, strike);
   }
 
   return (
@@ -187,7 +215,7 @@ export const App = () => {
               <input
                 type="number"
                 className="bg-slate-900 p-1 rounded-md text-white w-[80px]"
-                onChange={handleThrowBall}
+                onChange={handleThrowValue}
                 value={dropedPins}
               />
               <button
