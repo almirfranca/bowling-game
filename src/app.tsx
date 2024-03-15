@@ -1,6 +1,6 @@
 import { Players } from "./components/players";
 import { Frames } from "./components/frames";
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useCallback, useState } from "react";
 import { toast } from "sonner";
 
 interface Player {
@@ -15,7 +15,16 @@ const jsonPlayer = JSON.parse(localStorage.getItem("players")!) as
   | null;
 const playerOne = jsonPlayer ? jsonPlayer[0] : null;
 
-const initialFrames = [
+interface Frame {
+  round: number;
+  firstThrow: number;
+  secondThrow: number;
+  score: number;
+  // strike: boolean;
+  // spare: boolean;
+}
+
+const initialFrames: Frame[] = [
   {
     round: 1,
     firstThrow: 0,
@@ -95,76 +104,228 @@ export const App = () => {
     setDropedPins(valueThrow);
   }
 
+  const handleStrike = useCallback(
+    (updatedFrames: Frame[]) => {
+      const currentFrame = updatedFrames[indexFrame];
+
+      const mappedUpdatedFrames = updatedFrames.map((frame, index) => {
+        if (index === indexFrame - 1) {
+          return {
+            ...frame,
+            score: frame.score + currentFrame.firstThrow + dropedPins,
+          };
+        }
+
+        if (index === indexFrame) {
+          const previousFrameScore = updatedFrames[indexFrame - 1].score;
+          const updatedPreviousScore =
+            previousFrameScore + frame.firstThrow + dropedPins;
+
+          return {
+            ...frame,
+            secondThrow: dropedPins,
+            score: updatedPreviousScore + frame.firstThrow + dropedPins,
+          };
+        }
+
+        return frame;
+      });
+
+      // updatedFrames[indexFrame] = {
+      //   ...updatedFrames[indexFrame],
+      //   secondThrow: dropedPins,
+      //   score:
+      //     updatedFrames[indexFrame - 1].score +
+      //     updatedFrames[indexFrame].firstThrow +
+      //     dropedPins,
+      // };
+      strike = false;
+      handleRemainingPins();
+
+      return mappedUpdatedFrames;
+    },
+    [indexFrame, dropedPins]
+  );
+
+  const handleDoubleStrike = useCallback(
+    (updatedFrames: Frame[]) => {
+      // const currentFrame = updatedFrames[indexFrame];
+
+      const mappedUpdatedFrames = updatedFrames.map((frame, index) => {
+        if (index === indexFrame - 1) {
+          return {
+            ...frame,
+            score: frame.score + dropedPins,
+          };
+        }
+
+        if (index === indexFrame) {
+          const previousFrameScore = updatedFrames[indexFrame - 1].score;
+          const updatedPreviousScore = previousFrameScore + dropedPins;
+
+          return {
+            ...frame,
+            firstThrow: dropedPins,
+            score: updatedPreviousScore + dropedPins,
+          };
+        }
+
+        return frame;
+      });
+
+      // updatedFrames[indexFrame - 1].score += dropedPins;
+      // updatedFrames[indexFrame] = {
+      //   ...updatedFrames[indexFrame],
+      //   firstThrow: dropedPins,
+      //   score: updatedFrames[indexFrame - 1].score + dropedPins,
+      // };
+
+      return mappedUpdatedFrames;
+    },
+    [dropedPins, indexFrame]
+  );
+
+  const handleSpare = useCallback(
+    (updatedFrames: Frame[]) => {
+      // const currentFrame = updatedFrames[indexFrame];
+
+      const mappedUpdatedFrames = updatedFrames.map((frame, index) => {
+        if (index === indexFrame - 1) {
+          return {
+            ...frame,
+            score: frame.score + dropedPins,
+          };
+        }
+
+        if (index === indexFrame) {
+          const previousFrameScore = updatedFrames[indexFrame - 1].score;
+          const updatedPreviousScore = previousFrameScore + dropedPins;
+
+          return {
+            ...frame,
+            firstThrow: dropedPins,
+            score: updatedPreviousScore + dropedPins,
+          };
+        }
+
+        return frame;
+      });
+
+      // updatedFrames[indexFrame - 1].score += dropedPins;
+      // updatedFrames[indexFrame] = {
+      //   ...updatedFrames[indexFrame],
+      //   firstThrow: dropedPins,
+      //   score: updatedFrames[indexFrame - 1].score + dropedPins,
+      // };
+      spare = false;
+      return mappedUpdatedFrames;
+    },
+    [indexFrame, dropedPins]
+  );
+
+  const handleThrowOne = useCallback(
+    (updatedFrames: Frame[], pointsFirstThrow: number) => {
+      const mappedUpdatedFrames = updatedFrames.map((frame, index) => {
+        const previousFrameScore = updatedFrames[indexFrame - 1]?.score;
+        const updatedPreviousScore = previousFrameScore + dropedPins;
+
+        if (index === indexFrame) {
+          return {
+            ...frame,
+            firstThrow: dropedPins,
+            score:
+              updatedFrames[indexFrame].round === 1
+                ? pointsFirstThrow
+                : updatedPreviousScore,
+          };
+        }
+
+        return frame;
+      });
+
+      // updatedFrames[indexFrame] = {
+      //   ...updatedFrames[indexFrame],
+      //   firstThrow: dropedPins,
+      //   score:
+      //     updatedFrames[indexFrame].round === 1
+      //       ? pointsFirstThrow
+      //       : updatedFrames[indexFrame - 1].score + dropedPins,
+      // };
+
+      return mappedUpdatedFrames;
+    },
+    [indexFrame, dropedPins]
+  );
+
+  const handleSecondThrow = useCallback(
+    (updatedFrames: Frame[], pointsSecondThrow: number) => {
+      const mappedUpdatedFrames = updatedFrames.map((frame, index) => {
+        if (index === indexFrame) {
+          return {
+            ...frame,
+            secondThrow: dropedPins,
+            score: pointsSecondThrow,
+          };
+        }
+
+        return frame;
+      });
+
+      // updatedFrames[indexFrame] = {
+      //   ...updatedFrames[indexFrame],
+      //   secondThrow: dropedPins,
+      //   score: pointsSecondThrow,
+      // };
+
+      handleRemainingPins();
+      return mappedUpdatedFrames;
+    },
+
+    [dropedPins, indexFrame]
+  );
+
+  const handleRemainingPins = () => {
+    if (remainingPins !== 0) {
+      remainingPins = 10;
+    } else {
+      remainingPins = 10;
+      spare = true;
+    }
+
+    return;
+  };
+
   function throwBall(event: FormEvent) {
     event.preventDefault();
     toast.success(`Você derrubou: ${dropedPins} Pinos`);
     remainingPins -= dropedPins;
 
-    const currentFrame = frames[indexFrame];
-    let throws = amountThrows;
+    // const currentFrame = frames[indexFrame];
+    const throws = amountThrows;
 
     setFrames((prevFrames) => {
+      console.log("Entrei aqui");
       const updatedFrames = [...prevFrames];
+      const pointsOnTheThrow = updatedFrames[indexFrame].score + dropedPins;
+      //primeira jogada
 
       if (throws === 2) {
-        let pointsFirstThrow = updatedFrames[indexFrame].score + dropedPins;
-        let doubleStrike =
+        const doubleStrike =
           updatedFrames[indexFrame - 1]?.firstThrow === 10 && dropedPins === 10;
 
         if (doubleStrike) {
-          updatedFrames[indexFrame - 1].score += dropedPins;
-          updatedFrames[indexFrame] = {
-            ...currentFrame,
-            firstThrow: dropedPins,
-            score: updatedFrames[indexFrame - 1].score + dropedPins,
-          };
+          return handleDoubleStrike(updatedFrames);
         } else if (spare) {
-          updatedFrames[indexFrame - 1].score += dropedPins;
-          updatedFrames[indexFrame] = {
-            ...currentFrame,
-            firstThrow: dropedPins,
-            score: updatedFrames[indexFrame - 1].score + dropedPins,
-          };
-          spare = false;
+          return handleSpare(updatedFrames);
         } else {
-          updatedFrames[indexFrame] = {
-            ...currentFrame,
-            firstThrow: dropedPins,
-            score:
-              updatedFrames[indexFrame].round === 1
-                ? pointsFirstThrow
-                : updatedFrames[indexFrame - 1].score + dropedPins,
-          };
+          return handleThrowOne(updatedFrames, pointsOnTheThrow);
         }
       } else if (throws === 1) {
-        let pointsSecondThrow = updatedFrames[indexFrame].score + dropedPins;
-
+        //segunda jogada
         if (strike) {
-          updatedFrames[indexFrame - 1].score +=
-            updatedFrames[indexFrame].firstThrow + dropedPins;
-
-          updatedFrames[indexFrame] = {
-            ...currentFrame,
-            secondThrow: dropedPins,
-            score:
-              updatedFrames[indexFrame - 1].score +
-              updatedFrames[indexFrame].firstThrow +
-              dropedPins,
-          };
-          strike = false;
-        } else {
-          updatedFrames[indexFrame] = {
-            ...currentFrame,
-            secondThrow: dropedPins,
-            score: pointsSecondThrow,
-          };
+          return handleStrike(updatedFrames);
         }
-        if (remainingPins !== 0) {
-          remainingPins = 10;
-        } else {
-          remainingPins = 10;
-          spare = true;
-        }
+        return handleSecondThrow(updatedFrames, pointsOnTheThrow);
       }
 
       return updatedFrames;
