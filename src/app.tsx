@@ -17,9 +17,9 @@ const playerOne = jsonPlayer ? jsonPlayer[0] : null;
 
 interface Frame {
   round: number;
-  firstThrow: number;
-  secondThrow: number;
-  score: number;
+  firstThrow: number | null;
+  secondThrow: number | null;
+  score: number | null;
   // strike: boolean;
   // spare: boolean;
 }
@@ -27,63 +27,63 @@ interface Frame {
 const initialFrames: Frame[] = [
   {
     round: 1,
-    firstThrow: 0,
-    secondThrow: 0,
-    score: 0,
+    firstThrow: null,
+    secondThrow: null,
+    score: null,
   },
   {
     round: 2,
-    firstThrow: 0,
-    secondThrow: 0,
-    score: 0,
+    firstThrow: null,
+    secondThrow: null,
+    score: null,
   },
   {
     round: 3,
-    firstThrow: 0,
-    secondThrow: 0,
-    score: 0,
+    firstThrow: null,
+    secondThrow: null,
+    score: null,
   },
   {
     round: 4,
-    firstThrow: 0,
-    secondThrow: 0,
-    score: 0,
+    firstThrow: null,
+    secondThrow: null,
+    score: null,
   },
   {
     round: 5,
-    firstThrow: 0,
-    secondThrow: 0,
-    score: 0,
+    firstThrow: null,
+    secondThrow: null,
+    score: null,
   },
   {
     round: 6,
-    firstThrow: 0,
-    secondThrow: 0,
-    score: 0,
+    firstThrow: null,
+    secondThrow: null,
+    score: null,
   },
   {
     round: 7,
-    firstThrow: 0,
-    secondThrow: 0,
-    score: 0,
+    firstThrow: null,
+    secondThrow: null,
+    score: null,
   },
   {
     round: 8,
-    firstThrow: 0,
-    secondThrow: 0,
-    score: 0,
+    firstThrow: null,
+    secondThrow: null,
+    score: null,
   },
   {
     round: 9,
-    firstThrow: 0,
-    secondThrow: 0,
-    score: 0,
+    firstThrow: null,
+    secondThrow: null,
+    score: null,
   },
   {
     round: 10,
-    firstThrow: 0,
-    secondThrow: 0,
-    score: 0,
+    firstThrow: null,
+    secondThrow: null,
+    score: null,
   },
 ];
 
@@ -110,21 +110,25 @@ export const App = () => {
 
       const mappedUpdatedFrames = updatedFrames.map((frame, index) => {
         if (index === indexFrame - 1) {
+          const frameScore = frame.score || 0;
+          const currentFrameFirstThrow = currentFrame.firstThrow || 0;
+
           return {
             ...frame,
-            score: frame.score + currentFrame.firstThrow + dropedPins,
+            score: frameScore + currentFrameFirstThrow + dropedPins,
           };
         }
 
         if (index === indexFrame) {
-          const previousFrameScore = updatedFrames[indexFrame - 1].score;
+          const previousFrameScore = updatedFrames[indexFrame - 1].score || 0;
+          const frameFirstThrow = frame.firstThrow || 0;
           const updatedPreviousScore =
-            previousFrameScore + frame.firstThrow + dropedPins;
+            previousFrameScore + frameFirstThrow + dropedPins;
 
           return {
             ...frame,
             secondThrow: dropedPins,
-            score: updatedPreviousScore + frame.firstThrow + dropedPins,
+            score: updatedPreviousScore + frameFirstThrow + dropedPins,
           };
         }
 
@@ -153,14 +157,16 @@ export const App = () => {
 
       const mappedUpdatedFrames = updatedFrames.map((frame, index) => {
         if (index === indexFrame - 1) {
+          const frameScore = frame.score || 0;
+
           return {
             ...frame,
-            score: frame.score + dropedPins,
+            score: frameScore + dropedPins,
           };
         }
 
         if (index === indexFrame) {
-          const previousFrameScore = updatedFrames[indexFrame - 1].score;
+          const previousFrameScore = updatedFrames[indexFrame - 1].score || 0;
           const updatedPreviousScore = previousFrameScore + dropedPins;
 
           return {
@@ -191,14 +197,16 @@ export const App = () => {
 
       const mappedUpdatedFrames = updatedFrames.map((frame, index) => {
         if (index === indexFrame - 1) {
+          const frameScore = frame.score || 0;
+
           return {
             ...frame,
-            score: frame.score + dropedPins,
+            score: frameScore + dropedPins,
           };
         }
 
         if (index === indexFrame) {
-          const previousFrameScore = updatedFrames[indexFrame - 1].score;
+          const previousFrameScore = updatedFrames[indexFrame - 1].score || 0;
           const updatedPreviousScore = previousFrameScore + dropedPins;
 
           return {
@@ -226,7 +234,7 @@ export const App = () => {
   const handleThrowOne = useCallback(
     (updatedFrames: Frame[], pointsFirstThrow: number) => {
       const mappedUpdatedFrames = updatedFrames.map((frame, index) => {
-        const previousFrameScore = updatedFrames[indexFrame - 1]?.score;
+        const previousFrameScore = updatedFrames[indexFrame - 1]?.score || 0;
         const updatedPreviousScore = previousFrameScore + dropedPins;
 
         if (index === indexFrame) {
@@ -306,7 +314,8 @@ export const App = () => {
     setFrames((prevFrames) => {
       console.log("Entrei aqui");
       const updatedFrames = [...prevFrames];
-      const pointsOnTheThrow = updatedFrames[indexFrame].score + dropedPins;
+      const currentFrameScore = updatedFrames[indexFrame].score || 0;
+      const pointsOnTheThrow = currentFrameScore + dropedPins;
       //primeira jogada
 
       if (throws === 2) {
