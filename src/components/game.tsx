@@ -284,6 +284,20 @@ export const Game = ({ playAgain, playerOne }: GameProps) => {
           const frameScore = frame.score || 0;
 
           if (frame.strike === true && frame.secondThrow === null) {
+            if (dropedPins === 10) {
+              const allAreStrikes = updatedFrames.every((frame) => {
+                return frame.strike === true;
+              });
+
+              if (allAreStrikes) {
+                const maxScore = 300;
+                return {
+                  ...frame,
+                  secondThrow: dropedPins,
+                  score: maxScore,
+                };
+              }
+            }
             return {
               ...frame,
               secondThrow: dropedPins,
@@ -404,7 +418,10 @@ export const Game = ({ playAgain, playerOne }: GameProps) => {
         const endBonusFrame =
           (frame.strike === true || frame.spare === true) &&
           frame.bonusThrow !== null;
-        if (endFrame || endBonusFrame) {
+
+        const perfectGame = frame.strike === true && frame.secondThrow === 10;
+
+        if (endFrame || endBonusFrame || perfectGame) {
           return true;
         }
       }
