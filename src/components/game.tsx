@@ -156,20 +156,38 @@ export const Game = ({ playAgain, playerOne }: GameProps) => {
 
   const handleDoubleStrike = useCallback(
     (updatedFrames: Frame[], currentFrameIndex: number) => {
-      const mappedUpdatedFrames = updatedFrames.map((frame, index) => {
-        if (index === currentFrameIndex - 1) {
-          const frameScore = frame.score || 0;
+      const twoFramesBefore = updatedFrames[currentFrameIndex - 2];
 
+      const mappedUpdatedFrames = updatedFrames.map((frame, index) => {
+        const frameScore = frame.score || 0;
+
+        if (index === currentFrameIndex - 2) {
           return {
             ...frame,
             score: frameScore + dropedPins,
           };
         }
 
+        if (index === currentFrameIndex - 1) {
+          if (!twoFramesBefore) {
+            return {
+              ...frame,
+              score: frameScore + dropedPins,
+            };
+          }
+
+          return {
+            ...frame,
+            score: frameScore + dropedPins * 2,
+          };
+        }
+
         if (index === currentFrameIndex) {
           const previousFrameScore =
             updatedFrames[currentFrameIndex - 1].score || 0;
-          const updatedPreviousScore = previousFrameScore + dropedPins;
+          const updatedPreviousScore = twoFramesBefore
+            ? previousFrameScore + dropedPins * 2
+            : previousFrameScore + dropedPins;
 
           return {
             ...frame,
@@ -280,28 +298,26 @@ export const Game = ({ playAgain, playerOne }: GameProps) => {
   const handleBonusThrow = useCallback(
     (updatedFrames: Frame[], bonusFrameIndex: number) => {
       const mappedUpdatedFrames = updatedFrames.map((frame, index) => {
+        const frameScore = frame.score || 0;
+        const currentSecondThrow = updatedFrames[bonusFrameIndex].secondThrow;
+
+        if (
+          index === bonusFrameIndex - 1 &&
+          frame.strike &&
+          currentSecondThrow === null
+        ) {
+          return {
+            ...frame,
+            score: frameScore + dropedPins,
+          };
+        }
+
         if (index === bonusFrameIndex) {
-          const frameScore = frame.score || 0;
-
           if (frame.strike === true && frame.secondThrow === null) {
-            if (dropedPins === 10) {
-              const allAreStrikes = updatedFrames.every((frame) => {
-                return frame.strike === true;
-              });
-
-              if (allAreStrikes) {
-                const maxScore = 300;
-                return {
-                  ...frame,
-                  secondThrow: dropedPins,
-                  score: maxScore,
-                };
-              }
-            }
             return {
               ...frame,
               secondThrow: dropedPins,
-              score: frameScore + dropedPins,
+              score: frameScore + dropedPins * 2,
             };
           } else if (frame.strike === true && frame.bonusThrow === null) {
             return {
@@ -329,19 +345,30 @@ export const Game = ({ playAgain, playerOne }: GameProps) => {
   );
 
   const handleFrameIndex = (updatedFrames: Frame[]) => {
-    const frameIndex = updatedFrames.findIndex(
-      (frame) =>
-        (frame.firstThrow === null && frame.secondThrow === null) ||
-        (frame.firstThrow !== null &&
-          frame.secondThrow === null &&
-          !frame.strike) ||
-        (frame.round === 10 &&
-          frame.strike === true &&
-          frame.bonusThrow === null) ||
-        (frame.round === 10 &&
-          frame.spare === true &&
-          frame.bonusThrow === null)
-    );
+    const frameIndex = updatedFrames.findIndex((frame) => {
+      if (frame.firstThrow === null && frame.secondThrow === null) return true;
+      if (
+        frame.firstThrow !== null &&
+        frame.secondThrow === null &&
+        !frame.strike
+      )
+        return true;
+      if (
+        frame.round === 10 &&
+        frame.strike === true &&
+        frame.bonusThrow === null
+      ) {
+        return true;
+      }
+      if (
+        frame.round === 10 &&
+        frame.spare === true &&
+        frame.bonusThrow === null
+      )
+        return true;
+
+      return false;
+    });
 
     return frameIndex;
   };
@@ -371,8 +398,10 @@ export const Game = ({ playAgain, playerOne }: GameProps) => {
 
       if (currentThrow === 1) {
         const doubleStrike =
-          updatedFrames[currentFrameIndex - 1]?.firstThrow === 10 &&
-          dropedPins === 10;
+          (updatedFrames[currentFrameIndex - 1]?.firstThrow === 10 &&
+            dropedPins === 10) ||
+          (updatedFrames[currentFrameIndex - 1]?.firstThrow === 10 &&
+            updatedFrames[currentFrameIndex - 2]?.firstThrow === 10);
 
         if (doubleStrike) {
           return handleDoubleStrike(updatedFrames, currentFrameIndex);
@@ -419,7 +448,10 @@ export const Game = ({ playAgain, playerOne }: GameProps) => {
           (frame.strike === true || frame.spare === true) &&
           frame.bonusThrow !== null;
 
-        const perfectGame = frame.strike === true && frame.secondThrow === 10;
+        const perfectGame =
+          frame.strike === true &&
+          frame.secondThrow === 10 &&
+          frame.bonusThrow === 10;
 
         if (endFrame || endBonusFrame || perfectGame) {
           return true;
