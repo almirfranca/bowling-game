@@ -161,7 +161,7 @@ export const Game = ({ playAgain, playerOne }: GameProps) => {
       const mappedUpdatedFrames = updatedFrames.map((frame, index) => {
         const frameScore = frame.score || 0;
 
-        if (index === currentFrameIndex - 2) {
+        if (index === currentFrameIndex - 2 && frame.strike) {
           return {
             ...frame,
             score: frameScore + dropedPins,
@@ -169,7 +169,7 @@ export const Game = ({ playAgain, playerOne }: GameProps) => {
         }
 
         if (index === currentFrameIndex - 1) {
-          if (!twoFramesBefore) {
+          if (!twoFramesBefore || !twoFramesBefore.strike) {
             return {
               ...frame,
               score: frameScore + dropedPins,
@@ -185,9 +185,10 @@ export const Game = ({ playAgain, playerOne }: GameProps) => {
         if (index === currentFrameIndex) {
           const previousFrameScore =
             updatedFrames[currentFrameIndex - 1].score || 0;
-          const updatedPreviousScore = twoFramesBefore
-            ? previousFrameScore + dropedPins * 2
-            : previousFrameScore + dropedPins;
+          const updatedPreviousScore =
+            !twoFramesBefore || !twoFramesBefore.strike
+              ? previousFrameScore + dropedPins
+              : previousFrameScore + dropedPins * 2;
 
           return {
             ...frame,
